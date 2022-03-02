@@ -14,6 +14,7 @@ const Home = () => {
   // useState hooks
   const [toggleSidebar, setToggleSidebar] = useState(false)
   const [user, setUser] = useState();
+  const scrollRef = useRef(null);
   // Get the info for the user that logged in, or clear local storage if this info doesn't exist
   const userInfo = localStorage.getItem('user') !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : localStorage.clear();
   // Sanity Query to fetch the user document that matches the user that logged in using Google
@@ -25,31 +26,48 @@ const Home = () => {
         setUser(data[0]);
       })
   }, [])
+  // Sets initial scroll postion to top of page
+  useEffect(() => {
+    scrollRef.current.scrollTo(0, 0);
+  }, [])
   
-
   return (
     // different sidebars depending on size of page
     <div className="flex bg-gray-50 md:flex-row flex-col h-screen transition-height duration-75 ease-out">
-      {/* Sidebar for larger screens */}
       <div className="hidden md:flex h-screen flex-initial">
-        <Sidebar />
+        {/* Mobile sidebar */}
+        <Sidebar user={user && user} />
       </div>
       {/* Sidebar for smaller screens */}
       <div className="flex md:hidden flex-row">
-        <HiMenu fontSize={40} className="cursor-pointer" onClick={() => setToggleSidebar(false)} />
-        <Link to="/">
-          <img src={logo} alt="logo" className="w-28" />
-        </Link>
-        <Link to={`user-profile/${user?._id}`}>
-          {/* Pulls image from the user's Google account */}
-          <img src={user?.image} alt="logo" className="w-28" />
-        </Link>
+        <div className="p-2 w-full flex flex-row justify-between items-center shadow-md">
+          <HiMenu fontSize={40} className="cursor-pointer" onClick={() => setToggleSidebar(true)} />
+          <Link to="/">
+            <img src={logo} alt="logo" className="w-28" />
+          </Link>
+          <Link to={`user-profile/${user?._id}`}>
+            {/* Pulls image from the user's Google account */}
+            <img src={user?.image} alt="logo" className="w-28" />
+          </Link>
+        </div>
       </div>
       {toggleSidebar && (
         <div className="fixed w-4/5 bg-white h-screen overflow-y-auto shadow-md z-10 animate-slide-in">
-
+          <div className="absolute w-full flex justify-end items-center p-2">
+            <AiFillCloseCircle fontSize={30} className="cursor-pointer" onClick={() => setToggleSidebar(false)} />
+          </div>
+          {/* Desktop sidebar */}
+          <Sidebar user={user && user} closeToggle={setToggleSidebar}/>
         </div>
       )}
+      <div className="pb-2 flex-1 h-screen overflow-y-scroll" ref={scrollRef}>
+        {/* Routes to different webpages */}
+        <Routes>
+          <Route path="/user-profile/:userId" element={<UserProfile />} />
+          {/* Goes to pins and provides user data if user exists */}
+          <Route path="/*" element={<Pins user={user && user} />} />
+        </Routes>
+      </div>
     </div>
   )
 }
